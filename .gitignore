@@ -1,3 +1,7 @@
+/source*/
+/comService
+/serialDaemon
+
 # Object files
 *.o
 *.ko
