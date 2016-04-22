@@ -78,10 +78,11 @@ static void receiver_perform(receiver_st* r)
 #define MAX_DIR_CNT 3
 
     DEBUG("called");
-
+#if 0
     static uint32_t dirCnt = 0;
 
     char dirPath[255], outfile[255], tmpCmd[255];
+#endif
     uint32_t reg;
     unsigned long addr;
     uint32_t width, height;
@@ -99,8 +100,6 @@ static void receiver_perform(receiver_st* r)
     DEBUG("0x43C00008 reg:%u", reg);
     usleep((reg+200) * 1000);
 
-    //sleep(1);
-
     devmem_readsl(REG_ADDR_X, (void *)&reg, 1);
     width = reg & 0x0000FFFF;
     DEBUG("0x43C00000 width:%u", width);
@@ -112,6 +111,7 @@ static void receiver_perform(receiver_st* r)
     devmem_readsl(REG_ADDR_SAMPLE, (void *)&reg, 1);
     DEBUG("0x43C00018 reg:%u", reg);
 
+#if 0
     // create directory
     sprintf(dirPath, "/mnt/bmp%d", dirCnt);
     if (!access(dirPath, F_OK)) {
@@ -136,11 +136,17 @@ static void receiver_perform(receiver_st* r)
     sync();
 
     puts("");
+#endif
+    
 
     //sprintf(tmpCmd, "calSperm %s", dirPath);
     //system(tmpCmd);
 
     DEBUG("end");
+
+    memcpy(&r->tx_base, &r->rx_base, r->rx_base.ucLen + 1);
+
+    r->write_cb(r);
 }
 
 /*****************************************************************/
@@ -364,6 +370,10 @@ static void _set_pic_x_start(receiver_st* r)
     reg |= tmp << 16;
 
     devmem_set32(REG_ADDR_X, reg, 1);
+
+    memcpy(&r->tx_base, &r->rx_base, r->rx_base.ucLen + 1);
+
+    r->write_cb(r);
 }
 
 static void _set_pic_width(receiver_st* r)
@@ -381,6 +391,10 @@ static void _set_pic_width(receiver_st* r)
     reg |= tmp;
 
     devmem_set32(REG_ADDR_X, reg, 1);
+
+    memcpy(&r->tx_base, &r->rx_base, r->rx_base.ucLen + 1);
+
+    r->write_cb(r);
 }
 
 static void _set_pic_y_start(receiver_st* r)
@@ -403,6 +417,9 @@ static void _set_pic_y_start(receiver_st* r)
 
     devmem_set32(REG_ADDR_Y, reg, 1);
 
+    memcpy(&r->tx_base, &r->rx_base, r->rx_base.ucLen + 1);
+
+    r->write_cb(r);
 }
 
 static void _set_pic_height(receiver_st* r)
@@ -420,6 +437,10 @@ static void _set_pic_height(receiver_st* r)
     reg |= tmp;
 
     devmem_set32(REG_ADDR_Y, reg, 1);
+
+    memcpy(&r->tx_base, &r->rx_base, r->rx_base.ucLen + 1);
+
+    r->write_cb(r);
 }
 
 static void _set_sample_time(receiver_st* r)
@@ -436,6 +457,10 @@ static void _set_sample_time(receiver_st* r)
     }
 
     devmem_set32(REG_ADDR_TMR, reg, 1);
+
+    memcpy(&r->tx_base, &r->rx_base, r->rx_base.ucLen + 1);
+
+    r->write_cb(r);
 }
 
 receiver_cmd_callback receiver_cmd_set_cb[5][16] = {
