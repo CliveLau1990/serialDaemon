@@ -3,6 +3,7 @@
 /serialDaemon
 
 # Object files
+*.d
 *.o
 *.ko
 *.obj

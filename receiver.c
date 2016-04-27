@@ -21,9 +21,8 @@
 #include "debug.h"
 
 #include "reg.h"
-
 #include "rgb24tobmp.h"
-
+#include "calSperm.h"
 #include "receiver.h"
 
 /*
@@ -136,12 +135,12 @@ static void receiver_perform(receiver_st* r)
     sync();
 
     puts("");
-#endif
-    
 
     //sprintf(tmpCmd, "calSperm %s", dirPath);
     //system(tmpCmd);
-
+#else
+    calSperm(0x18000000, width, height, reg);
+#endif
     DEBUG("end");
 
     memcpy(&r->tx_base, &r->rx_base, r->rx_base.ucLen + 1);

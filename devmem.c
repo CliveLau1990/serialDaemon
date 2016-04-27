@@ -37,7 +37,7 @@ DEBUG_SET_LEVEL(DEBUG_LEVEL_ERR);
 
 static int		devmem_fd;
 
-void *devm_map(unsigned long addr, int len)
+void *devm_map(unsigned long addr, unsigned long len)
 {
 	off_t offset;
 	void *map_base; 
@@ -72,7 +72,7 @@ err_open:
 	return NULL;
 }
 
-void devm_unmap(void *virt_addr, int len)
+void devm_unmap(void *virt_addr, unsigned long len)
 {
 	unsigned long addr;
 
@@ -236,7 +236,7 @@ void devmem_writeq(unsigned long addr, uint64_t val)
 }
 
 /* read & write a serial bytes */
-void devmem_readsb(unsigned long addr, void *buf, int count)
+void devmem_readsb(unsigned long addr, void *buf, unsigned long count)
 {
 	uint8_t *src, *dst;
 	int len = count;
@@ -259,7 +259,7 @@ void devmem_readsb(unsigned long addr, void *buf, int count)
 	devm_unmap(virt_addr, len);
 }
 
-void devmem_writesb(unsigned long addr, void *buf, int count)
+void devmem_writesb(unsigned long addr, void *buf, unsigned long count)
 {
 	uint8_t *src, *dst;
 	int len = count;
@@ -283,7 +283,7 @@ void devmem_writesb(unsigned long addr, void *buf, int count)
 }
 
 /* read & write a serial hwords */
-void devmem_readsw(unsigned long addr, void *buf, int count)
+void devmem_readsw(unsigned long addr, void *buf, unsigned long count)
 {
 	uint16_t *src, *dst;
 	int len = count * 2;
@@ -306,7 +306,7 @@ void devmem_readsw(unsigned long addr, void *buf, int count)
 	devm_unmap(virt_addr, len);
 }
 
-void devmem_writesw(unsigned long addr, void *buf, int count)
+void devmem_writesw(unsigned long addr, void *buf, unsigned long count)
 {
 	uint16_t *src, *dst;
 	int len = count * 2;
@@ -330,7 +330,7 @@ void devmem_writesw(unsigned long addr, void *buf, int count)
 }
 
 /* read & write a serial words */
-void devmem_readsl(unsigned long addr, void *buf, int count)
+void devmem_readsl(unsigned long addr, void *buf, unsigned long count)
 {
 	uint32_t *src, *dst;
 	int len = count * 4;
@@ -353,7 +353,7 @@ void devmem_readsl(unsigned long addr, void *buf, int count)
 	devm_unmap(virt_addr, len);
 }
 
-void devmem_writesl(unsigned long addr, void *buf, int count)
+void devmem_writesl(unsigned long addr, void *buf, unsigned long count)
 {
 	uint32_t *src, *dst;
 	int len = count * 4;
@@ -377,7 +377,7 @@ void devmem_writesl(unsigned long addr, void *buf, int count)
 }
 
 /* read & write a serial dwords */
-void devmem_readsq(unsigned long addr, void *buf, int count)
+void devmem_readsq(unsigned long addr, void *buf, unsigned long count)
 {
 	uint64_t *src, *dst;
 	int len = count * 8;
@@ -400,7 +400,7 @@ void devmem_readsq(unsigned long addr, void *buf, int count)
 	devm_unmap(virt_addr, len);
 }
 
-void devmem_writesq(unsigned long addr, void *buf, int count)
+void devmem_writesq(unsigned long addr, void *buf, unsigned long count)
 {
 	uint64_t *src, *dst;
 	int len = count * 8;
@@ -423,7 +423,7 @@ void devmem_writesq(unsigned long addr, void *buf, int count)
 	devm_unmap(virt_addr, len);
 }
 
-void devmem_set(unsigned long addr, uint8_t value, int count)
+void devmem_set(unsigned long addr, uint8_t value, unsigned long count)
 {
 	uint8_t *dst;
 	int i;
@@ -441,7 +441,7 @@ void devmem_set(unsigned long addr, uint8_t value, int count)
 }
 
 /* I/O memory should 32 bit allign */
-void devmem_set32(unsigned long addr, uint32_t value, int count)
+void devmem_set32(unsigned long addr, uint32_t value, unsigned long count)
 {
 	uint32_t *dst;
 	int i;

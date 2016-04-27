@@ -1,6 +1,7 @@
 #include "CalSpermCount.h"
+#include "Histogram.h"
 
-#include "extern.h"
+extern CalSpermCount CalCount;
 
 #define WINDOWNAME "DealWindows"
 
