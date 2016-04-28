@@ -5,6 +5,10 @@
 
 #include "calSperm.h"
 
+// 获取图像帧对应的起始地址
+#define FRAME2ADDR(addr,width,height,frame) \
+    ((unsigned long)((unsigned long *)addr + width * height * frame))
+
 CalSpermCount CalCount;
 
 static inline int getRawRGB24(unsigned long addr, uint32_t width, uint32_t height, void *buf)
@@ -26,7 +30,7 @@ extern "C" int calSperm(unsigned long addr, uint32_t width, uint32_t height, siz
 {
     char buffer[width * height * 3];
 
-    getRawRGB24(addr, width, height, (void *)&buffer);
+    getRawRGB24(FRAME2ADDR(addr,width,height,0), width, height, (void *)&buffer);
 
     Mat image(Size(width, height), CV_8UC3, buffer, width * 3);
     CalCount.ShowImage("srcImage", image);

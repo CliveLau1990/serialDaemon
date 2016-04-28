@@ -25,6 +25,10 @@
 #include "calSperm.h"
 #include "receiver.h"
 
+// 获取图像帧对应的起始地址
+#define FRAME2ADDR(addr,width,height,frame) \
+    ((unsigned long)((unsigned long *)addr + width * height * frame))
+
 /*
  * define the debug level of this file,
  * please see 'debug.h' for detail info
@@ -127,7 +131,11 @@ static void receiver_perform(receiver_st* r)
         putchar('.');
         fflush(stdout);
         sprintf(outfile, "/mnt/bmp%d/file%d.bmp", dirCnt, i);
+#if 0
         rgb24tobmp((unsigned long)(((unsigned long *)0x18000000) + width*height*i), outfile, width, height, 24);
+#else
+        rgb24tobmp(FRAME2ADDR(0x18000000,width,height,i), outfile, width, height, 24);
+#endif
     }
 
     dirCnt = (dirCnt + 1) % MAX_DIR_CNT;
