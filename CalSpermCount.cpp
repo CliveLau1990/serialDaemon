@@ -37,7 +37,7 @@ int CalSpermCount::BWconvert()
 
 int CalSpermCount::ShowImage(char *szWinName,Mat img)
 {
-#if 0
+#if 0 // No GUI
 	Size dsize = Size(nshowcol,nshowrow);
 	Mat image2show = Mat(dsize,CV_8U);
 	::resize(img, image2show,dsize);
@@ -152,14 +152,13 @@ Result CalSpermCount::calNum(Mat img)
 	//dst_gray = tmp_back  - img  ;
 	//dst_gray = img  ;
 	::resize(dst_gray, image2show,dsize);
-#if 0
+#if 0 // No GUI
 	if(nShowMidRst)
 	    cvNamedWindow(WINDOWNAME);
-#endif
 
 	::createTrackbar("filter pattern",WINDOWNAME,&g_nThresholdType,4,on_Theshold);
 	createTrackbar("theshold value",WINDOWNAME,&g_nThresholdValue,255,on_Theshold);
-
+#endif
 	//初始化自定义回调函数
 	on_Theshold(0,0);
 

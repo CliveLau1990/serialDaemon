@@ -20,6 +20,7 @@
 
 #include "debug.h"
 
+#include "common.h"
 #include "reg.h"
 #include "rgb24tobmp.h"
 #include "calSperm.h"
@@ -45,6 +46,7 @@ static inline uint8_t _get_checksums(receiver_st* r)
     int i;
 
     r->tx_base.ucChecksums = 0;
+    r->tx_base.ucChecksums += r->tx_base.ucLen;
     r->tx_base.ucChecksums += r->tx_base.aId[0] + r->tx_base.aId[1];
     r->tx_base.ucChecksums += r->tx_base.cCmd;
     for (i = 0; i < 4; ++i) {
@@ -90,6 +92,12 @@ static void receiver_perform(receiver_st* r)
     unsigned long addr;
     uint32_t width, height;
     uint32_t i;
+    Result_cal st_result = {
+        .u16count = 0,
+        .u16motility = 0,
+        .u16Rsv1 = 0,
+        .u16Rsv2 = 0,
+    };
 
     // reset DMA controller
     devmem_set32(REG_ADDR_CTRL, 0x1, 1);
@@ -147,11 +155,28 @@ static void receiver_perform(receiver_st* r)
     //sprintf(tmpCmd, "calSperm %s", dirPath);
     //system(tmpCmd);
 #else
-    calSperm(0x18000000, width, height, reg);
+    calSperm(0x18000000, width, height, reg, &st_result);
 #endif
     DEBUG("end");
 
+#if 0
     memcpy(&r->tx_base, &r->rx_base, r->rx_base.ucLen + 1);
+#else
+    r->tx_base.ucLen = 0x0B;
+    r->tx_base.aId[0] = 0x00;
+    r->tx_base.aId[1] = 0x01;
+    r->tx_base.cCmd = 0x24;
+    r->tx_base.aParm[0] = (st_result.u16count & 0xFF00) >> 8;
+    r->tx_base.aParm[1] = st_result.u16count & 0xFF;
+    r->tx_base.aParm[2] = (st_result.u16motility & 0xFF00) >> 8;
+    r->tx_base.aParm[3] = st_result.u16motility & 0xFF;
+    r->tx_base.aParm[4] = (st_result.u16Rsv1 & 0xFF00) >> 8;
+    r->tx_base.aParm[5] = st_result.u16Rsv1 & 0xFF;
+    r->tx_base.aParm[6] = (st_result.u16Rsv2 & 0xFF00) >> 8;
+    r->tx_base.aParm[7] = st_result.u16Rsv2 & 0xFF;
+
+    _get_checksums(r);
+#endif
 
     r->write_cb(r);
 }
@@ -507,7 +532,7 @@ static void receiver_parse(receiver_st* r)
     }
 #endif
 
-    for (checksums = 0, pos = POS_ID_1ST; pos < r->in[POS_LEN] + 2; pos++) {
+    for (checksums = 0, pos = POS_LEN; pos < r->in[POS_LEN] + 2; pos++) {
         checksums += (unsigned char)r->in[pos];
     }
     if (checksums != (unsigned char)r->in[RX_MAX_SIZE - 1]) {
@@ -520,7 +545,7 @@ static void receiver_parse(receiver_st* r)
     r->rx_base.aId[ID_1ST] = r->in[POS_ID_1ST];
     r->rx_base.aId[ID_2ND] = r->in[POS_ID_2ND];
     r->rx_base.cCmd = r->in[POS_CMD];
-    for (pos = 0; pos < PARMS_MAX_SIZE; ++pos) {
+    for (pos = 0; pos < (r->in[POS_LEN] - 2 - 1 - 1); ++pos) {
         r->rx_base.aParm[pos] = r->in[POS_CMD + pos + 1];
     }
 

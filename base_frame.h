@@ -43,6 +43,10 @@ enum stParmFormat {
     PARM_INDEX,
     PARM_VAL_1ST,
     PARM_VAL_2ND,
+    PARM_RSV1,
+    PARM_RSV2,
+    PARM_RSV3,
+    PARM_RSV4,
     PARMS_MAX_SIZE,
 };
 

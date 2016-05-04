@@ -26,9 +26,14 @@ static inline int getRawRGB24(unsigned long addr, uint32_t width, uint32_t heigh
     }
 }
 
-extern "C" int calSperm(unsigned long addr, uint32_t width, uint32_t height, size_t frameCnt)
+extern "C" int calSperm(unsigned long addr, uint32_t width, uint32_t height, size_t frameCnt, Result_cal* pResult_cal)
 {
     char buffer[width * height * 3];
+    Result st_result = {
+        .LittleNum = 0,
+        .AimNum = 0,
+        .LargeNum = 0,
+    };
 
     getRawRGB24(FRAME2ADDR(addr,width,height,0), width, height, (void *)&buffer);
 
@@ -41,9 +46,11 @@ extern "C" int calSperm(unsigned long addr, uint32_t width, uint32_t height, siz
     }
 
     if (CalCount.bGetImage) {
-        CalCount.calNum(CalCount.img);
+        st_result = CalCount.calNum(CalCount.img);
         CalCount.bGetImage = false;
     }
+
+    pResult_cal->u16count = st_result.LargeNum;
 
     return 0;
 }

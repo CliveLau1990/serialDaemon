@@ -7,6 +7,8 @@
 using namespace cv;
 using namespace std;
 
+#include "common.h"
+
 class Histgram1D
 {
 private : 
