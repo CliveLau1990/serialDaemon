@@ -19,7 +19,7 @@ extern C {
 #include "base_frame.h"
 
 #define RX_MAX_SIZE  11
-#define TX_MAX_SIZE  11
+#define TX_MAX_SIZE  32
 
 typedef struct _receiver receiver_st;
 

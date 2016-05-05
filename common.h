@@ -14,10 +14,14 @@
 #include <stdint.h>
 
 typedef struct {
+    uint16_t u16sn;
     uint16_t u16count;
     uint16_t u16motility;
     uint16_t u16Rsv1;
     uint16_t u16Rsv2;
+    uint16_t u16Rsv3;
+    uint16_t u16Rsv4;
+    uint16_t u16Rsv5;
 } Result_cal;
 
 #endif /* end of _COMMON_H_ */

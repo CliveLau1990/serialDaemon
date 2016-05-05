@@ -17,12 +17,14 @@ static inline int getRawRGB24(unsigned long addr, uint32_t width, uint32_t heigh
     int buffer[height * width];
     char * pBuf = (char *)buf;
 
+    printf("getRawRGB24 called\n");
+    memset(&buffer, 0, height * width * sizeof(int));
     devmem_readsl(addr, (void *)&buffer, height * width);
-
+    printf("devmem_readsl called\n");
     for (i = j = 0; i < width * height; ++i) {
-        pBuf[j++] = *((char *)buffer[i] + 3);
-        pBuf[j++] = *((char *)buffer[i] + 2);
-        pBuf[j++] = *((char *)buffer[i] + 1);
+        pBuf[j++] = *((char *)&buffer[i] + 3);
+        pBuf[j++] = *((char *)&buffer[i] + 2);
+        pBuf[j++] = *((char *)&buffer[i] + 1);
     }
 }
 

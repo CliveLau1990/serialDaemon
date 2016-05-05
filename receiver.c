@@ -40,19 +40,16 @@ typedef void (*receiver_cmd_callback)(receiver_st * r);
 
 static receiver_st * pReceiver = NULL;
 static bool isConnected = false;
-
-static inline uint8_t _get_checksums(receiver_st* r)
-{
-    int i;
-
-    r->tx_base.ucChecksums = 0;
-    r->tx_base.ucChecksums += r->tx_base.ucLen;
-    r->tx_base.ucChecksums += r->tx_base.aId[0] + r->tx_base.aId[1];
-    r->tx_base.ucChecksums += r->tx_base.cCmd;
-    for (i = 0; i < 4; ++i) {
-        r->tx_base.ucChecksums += r->tx_base.aParm[i];
-    }
-}
+static Result_cal st_result = {
+    .u16sn = 0,
+    .u16count = 0,
+    .u16motility = 0,
+    .u16Rsv1 = 0,
+    .u16Rsv2 = 0,
+    .u16Rsv3 = 0,
+    .u16Rsv4 = 0,
+    .u16Rsv5 = 0,
+};
 
 /*****************************************************************/
 /*****************************************************************/
@@ -88,16 +85,11 @@ static void receiver_perform(receiver_st* r)
 
     char dirPath[255], outfile[255], tmpCmd[255];
 #endif
+    char outfile[255], tmpCmd[255];
     uint32_t reg;
     unsigned long addr;
     uint32_t width, height;
     uint32_t i;
-    Result_cal st_result = {
-        .u16count = 0,
-        .u16motility = 0,
-        .u16Rsv1 = 0,
-        .u16Rsv2 = 0,
-    };
 
     // reset DMA controller
     devmem_set32(REG_ADDR_CTRL, 0x1, 1);
@@ -155,6 +147,16 @@ static void receiver_perform(receiver_st* r)
     //sprintf(tmpCmd, "calSperm %s", dirPath);
     //system(tmpCmd);
 #else
+    // Debug
+    sprintf(outfile, "/mnt/file.bmp");
+    if (!access(outfile, F_OK)) {
+        sprintf(tmpCmd, "rm -rf %s", outfile);
+        system(tmpCmd);
+        sync();
+    }
+    rgb24tobmp(FRAME2ADDR(0x18000000, width, height, 0), outfile, width, height, 24);
+    printf("Generating bmp files...\n");
+
     calSperm(0x18000000, width, height, reg, &st_result);
 #endif
     DEBUG("end");
@@ -162,21 +164,54 @@ static void receiver_perform(receiver_st* r)
 #if 0
     memcpy(&r->tx_base, &r->rx_base, r->rx_base.ucLen + 1);
 #else
-    r->tx_base.ucLen = 0x0B;
+    r->tx_base.ucLen = 0x14;
     r->tx_base.aId[0] = 0x00;
     r->tx_base.aId[1] = 0x01;
-    r->tx_base.cCmd = 0x24;
-    r->tx_base.aParm[0] = (st_result.u16count & 0xFF00) >> 8;
-    r->tx_base.aParm[1] = st_result.u16count & 0xFF;
-    r->tx_base.aParm[2] = (st_result.u16motility & 0xFF00) >> 8;
-    r->tx_base.aParm[3] = st_result.u16motility & 0xFF;
-    r->tx_base.aParm[4] = (st_result.u16Rsv1 & 0xFF00) >> 8;
-    r->tx_base.aParm[5] = st_result.u16Rsv1 & 0xFF;
-    r->tx_base.aParm[6] = (st_result.u16Rsv2 & 0xFF00) >> 8;
-    r->tx_base.aParm[7] = st_result.u16Rsv2 & 0xFF;
+    r->tx_base.cCmd = CMD_RESULT;
+    r->tx_base.aParm[0] = (st_result.u16sn & 0xFF00) >> 8;
+    r->tx_base.aParm[1] = st_result.u16sn & 0xFF;
+    r->tx_base.aParm[2] = (st_result.u16count & 0xFF00) >> 8;
+    r->tx_base.aParm[3] = st_result.u16count & 0xFF;
+    r->tx_base.aParm[4] = (st_result.u16motility & 0xFF00) >> 8;
+    r->tx_base.aParm[5] = st_result.u16motility & 0xFF;
+    r->tx_base.aParm[6] = (st_result.u16Rsv1 & 0xFF00) >> 8;
+    r->tx_base.aParm[7] = st_result.u16Rsv1 & 0xFF;
+    r->tx_base.aParm[8] = (st_result.u16Rsv2 & 0xFF00) >> 8;
+    r->tx_base.aParm[9] = st_result.u16Rsv2 & 0xFF;
+    r->tx_base.aParm[10] = (st_result.u16Rsv3 & 0xFF00) >> 8;
+    r->tx_base.aParm[11] = st_result.u16Rsv3 & 0xFF;
+    r->tx_base.aParm[12] = (st_result.u16Rsv4 & 0xFF00) >> 8;
+    r->tx_base.aParm[13] = st_result.u16Rsv4 & 0xFF;
+    r->tx_base.aParm[14] = (st_result.u16Rsv5 & 0xFF00) >> 8;
+    r->tx_base.aParm[15] = st_result.u16Rsv5 & 0xFF;
 
-    _get_checksums(r);
 #endif
+
+    r->write_cb(r);
+}
+
+static void receiver_result(receiver_st* r)
+{
+    r->tx_base.ucLen = 0x14;
+    r->tx_base.aId[0] = 0x00;
+    r->tx_base.aId[1] = 0x01;
+    r->tx_base.cCmd = CMD_RESULT;
+    r->tx_base.aParm[0] = (st_result.u16sn & 0xFF00) >> 8;
+    r->tx_base.aParm[1] = st_result.u16sn & 0xFF;
+    r->tx_base.aParm[2] = (st_result.u16count & 0xFF00) >> 8;
+    r->tx_base.aParm[3] = st_result.u16count & 0xFF;
+    r->tx_base.aParm[4] = (st_result.u16motility & 0xFF00) >> 8;
+    r->tx_base.aParm[5] = st_result.u16motility & 0xFF;
+    r->tx_base.aParm[6] = (st_result.u16Rsv1 & 0xFF00) >> 8;
+    r->tx_base.aParm[7] = st_result.u16Rsv1 & 0xFF;
+    r->tx_base.aParm[8] = (st_result.u16Rsv2 & 0xFF00) >> 8;
+    r->tx_base.aParm[9] = st_result.u16Rsv2 & 0xFF;
+    r->tx_base.aParm[10] = (st_result.u16Rsv3 & 0xFF00) >> 8;
+    r->tx_base.aParm[11] = st_result.u16Rsv3 & 0xFF;
+    r->tx_base.aParm[12] = (st_result.u16Rsv4 & 0xFF00) >> 8;
+    r->tx_base.aParm[13] = st_result.u16Rsv4 & 0xFF;
+    r->tx_base.aParm[14] = (st_result.u16Rsv5 & 0xFF00) >> 8;
+    r->tx_base.aParm[15] = st_result.u16Rsv5 & 0xFF;
 
     r->write_cb(r);
 }
@@ -199,8 +234,6 @@ static void _get_mcu_version(receiver_st* r)
     r->tx_base.aParm[2] = MCU_VERSION >> 8;
     r->tx_base.aParm[3] = MCU_VERSION & 0xFF;
 
-    _get_checksums(r);
-
     r->write_cb(r);
 }
 
@@ -216,8 +249,6 @@ static void _get_fpga_version(receiver_st* r)
     r->tx_base.aParm[2] = reg >> 8;
     r->tx_base.aParm[3] = reg & 0xFF;
 
-    _get_checksums(r);
-
     r->write_cb(r);
 }
 
@@ -231,8 +262,6 @@ static void _get_linux_version(receiver_st* r)
 
     r->tx_base.aParm[2] = LINUX_VERSION >> 8;
     r->tx_base.aParm[3] = LINUX_VERSION & 0xFF;
-
-    _get_checksums(r);
 
     r->write_cb(r);
 }
@@ -248,8 +277,6 @@ static void _get_hw_version(receiver_st* r)
     r->tx_base.aParm[2] = HW_VERSION >> 8;
     r->tx_base.aParm[3] = HW_VERSION & 0xFF;
 
-    _get_checksums(r);
-
     r->write_cb(r);
 }
 
@@ -262,8 +289,6 @@ static void _get_sensor_type(receiver_st* r)
     r->tx_base.aParm[2] = 0x0;
     // type: ov5640
     r->tx_base.aParm[3] = 0x1;
-
-    _get_checksums(r);
 
     r->write_cb(r);
 }
@@ -280,8 +305,6 @@ static void _get_pic_x_start(receiver_st* r)
     r->tx_base.aParm[2] = (reg & 0xFF000000) >> 24;
     r->tx_base.aParm[3] = (reg & 0x00FF0000) >> 16;
 
-    _get_checksums(r);
-
     r->write_cb(r);
 }
 
@@ -296,8 +319,6 @@ static void _get_pic_width(receiver_st* r)
     devmem_readsl(REG_ADDR_X, (void *)&reg, 1);
     r->tx_base.aParm[2] = (reg & 0xFF00) >> 8;
     r->tx_base.aParm[3] = reg & 0x00FF;
-
-    _get_checksums(r);
 
     r->write_cb(r);
 }
@@ -314,8 +335,6 @@ static void _get_pic_y_start(receiver_st* r)
     r->tx_base.aParm[2] = (reg & 0xFF000000) >> 24;
     r->tx_base.aParm[3] = (reg & 0x00FF0000) >> 16;
 
-    _get_checksums(r);
-
     r->write_cb(r);
 }
 
@@ -331,8 +350,6 @@ static void _get_pic_height(receiver_st* r)
     r->tx_base.aParm[2] = (reg & 0xFF00) >> 8;
     r->tx_base.aParm[3] = reg & 0x00FF;
 
-    _get_checksums(r);
-
     r->write_cb(r);
 }
 
@@ -347,8 +364,6 @@ static void _get_sample_time(receiver_st* r)
     devmem_readsl(REG_ADDR_TMR, (void *)&reg, 1);
     r->tx_base.aParm[2] = (reg & 0xFF00) >> 8;
     r->tx_base.aParm[3] = reg & 0x00FF;
-
-    _get_checksums(r);
 
     r->write_cb(r);
 }
@@ -565,6 +580,13 @@ static void receiver_parse(receiver_st* r)
             }
             break;
         }
+        case CMD_RESULT: {
+            DEBUG("recv cmd: CMD_RESULT");
+            if (isConnected) {
+                receiver_result(r);
+            }
+            break;
+        }
         case CMD_SET: {
             DEBUG("recv cmd: CMD_SET");
 
@@ -604,23 +626,38 @@ static int receiver_write(receiver_st* r)
 {
     char buf[TX_MAX_SIZE];
     int retVal;
+    int i = 0, j = 0;
+    uint8_t checksums = 0;
 
-    buf[POS_HEADER_1ST] = HEADER_1ST;
-    buf[POS_HEADER_2ND]= HEADER_2ND;
+    buf[i++] = HEADER_1ST;
+    buf[i++]= HEADER_2ND;
 
-    memcpy(&buf[POS_LEN], &r->tx_base, TX_MAX_SIZE - 2);
+    buf[i++] = r->tx_base.ucLen;
+    buf[i++] = r->tx_base.aId[0];
+    buf[i++] = r->tx_base.aId[1];
+    buf[i++] = r->tx_base.cCmd;
+
+    for (j = 0; j < (r->tx_base.ucLen - 2 - 1 - 1); j++) {
+        buf[i++] = r->tx_base.aParm[j];
+    }
+
+    for (j = 2; j < (r->tx_base.ucLen + 2); j++) {
+        printf(" 0x%x,",(uint8_t)buf[j]);
+        checksums += buf[j];
+    }
+    buf[i++] = checksums;
 
 #ifdef CONFIG_ENABLE_DEBUG
     printf("==========\n");
     printf("Tx data as follows:");
-    int i;
-    for (i = 0; i < TX_MAX_SIZE; i++) {
-        printf(" 0x%x,",(uint8_t)buf[i]);
+    int k;
+    for (k = 0; k < i; k++) {
+        printf(" 0x%x,",(uint8_t)buf[k]);
     }
     printf("\n");
 #endif
 
-    retVal = write(r->fd, buf, TX_MAX_SIZE);
+    retVal = write(r->fd, buf, i);
     if (retVal < 0) {
         ERR("Error on MSG write :%s", strerror(errno));
         return -1;

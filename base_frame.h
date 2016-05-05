@@ -35,6 +35,7 @@ enum stCommandSet {
     CMD_PERFORM = 0x21,
     CMD_SET     = 0x22,
     CMD_GET     = 0x23,
+    CMD_RESULT  = 0x24,
 };
 
 /* Frame - parameter format */
@@ -43,10 +44,18 @@ enum stParmFormat {
     PARM_INDEX,
     PARM_VAL_1ST,
     PARM_VAL_2ND,
-    PARM_RSV1,
-    PARM_RSV2,
-    PARM_RSV3,
-    PARM_RSV4,
+    PARM_RSV1_1,
+    PARM_RSV1_2,
+    PARM_RSV2_1,
+    PARM_RSV2_2,
+    PARM_RSV3_1,
+    PARM_RSV3_2,
+    PARM_RSV4_1,
+    PARM_RSV4_2,
+    PARM_RSV5_1,
+    PARM_RSV5_2,
+    PARM_RSV6_1,
+    PARM_RSV6_2,
     PARMS_MAX_SIZE,
 };
 
