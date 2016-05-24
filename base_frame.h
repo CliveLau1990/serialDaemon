@@ -38,6 +38,13 @@ enum stCommandSet {
     CMD_RESULT  = 0x24,
 };
 
+/* Frame - perform format */
+enum stPerfFormat {
+    PERF_MEASURE = 0,
+    PERF_SAMPLE,
+    PERF_MAX_SIZE,
+};
+
 /* Frame - parameter format */
 enum stParmFormat {
     PARM_TYPE = 0,

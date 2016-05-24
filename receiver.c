@@ -77,15 +77,9 @@ static void receiver_connect(receiver_st* r)
 static void receiver_perform(receiver_st* r)
 {
 //#define ADDR_BASE (~(0x3uL))
-#define MAX_DIR_CNT 3
-
     DEBUG("called");
-#if 0
-    static uint32_t dirCnt = 0;
 
     char dirPath[255], outfile[255], tmpCmd[255];
-#endif
-    char outfile[255], tmpCmd[255];
     uint32_t reg;
     unsigned long addr;
     uint32_t width, height;
@@ -114,78 +108,70 @@ static void receiver_perform(receiver_st* r)
     devmem_readsl(REG_ADDR_SAMPLE, (void *)&reg, 1);
     DEBUG("0x43C00018 reg:%u", reg);
 
-#if 0
-    // create directory
-    sprintf(dirPath, "/mnt/bmp%d", dirCnt);
-    if (!access(dirPath, F_OK)) {
-        sprintf(tmpCmd, "rm -rf %s", dirPath);
-        system(tmpCmd);
-        sync();
+    switch ( (uint8_t)r->rx_base.aParm[0] ) {
+        case PERF_MEASURE: {
+            // create directory
+            sprintf(dirPath, "/mnt/bmp_sample");
+            if (!access(dirPath, F_OK)) {
+                sprintf(tmpCmd, "rm -rf %s", dirPath);
+                system(tmpCmd);
+                sync();
+            }
+            mkdir(dirPath, S_IRWXU | S_IRWXG | S_IRWXO);
+            DEBUG("DIR:%s", dirPath);
+
+            // generate bmp files
+            for (i = 0; i < reg ; ++i) {
+                putchar('.');
+                fflush(stdout);
+                sprintf(outfile, "/mnt/bmp_sample/file%d.bmp", i);
+                rgb24tobmp(FRAME2ADDR(0x18000000,width,height,i), outfile, width, height, 24);
+            }
+            sync();
+            puts("");
+
+            memcpy(&r->tx_base, &r->rx_base, r->rx_base.ucLen + 1);
+
+            break;
+        } case PERF_SAMPLE: {
+            // Debug
+            sprintf(outfile, "/mnt/file.bmp");
+            if (!access(outfile, F_OK)) {
+                sprintf(tmpCmd, "rm -rf %s", outfile);
+                system(tmpCmd);
+                sync();
+            }
+            rgb24tobmp(FRAME2ADDR(0x18000000, width, height, 0), outfile, width, height, 24);
+            printf("Generating bmp files...\n");
+
+            calSperm(0x18000000, width, height, reg, &st_result);
+
+            r->tx_base.ucLen = 0x14;
+            r->tx_base.aId[0] = 0x00;
+            r->tx_base.aId[1] = 0x01;
+            r->tx_base.cCmd = CMD_RESULT;
+            r->tx_base.aParm[0] = (st_result.u16sn & 0xFF00) >> 8;
+            r->tx_base.aParm[1] = st_result.u16sn & 0xFF;
+            r->tx_base.aParm[2] = (st_result.u16count & 0xFF00) >> 8;
+            r->tx_base.aParm[3] = st_result.u16count & 0xFF;
+            r->tx_base.aParm[4] = (st_result.u16motility & 0xFF00) >> 8;
+            r->tx_base.aParm[5] = st_result.u16motility & 0xFF;
+            r->tx_base.aParm[6] = (st_result.u16Rsv1 & 0xFF00) >> 8;
+            r->tx_base.aParm[7] = st_result.u16Rsv1 & 0xFF;
+            r->tx_base.aParm[8] = (st_result.u16Rsv2 & 0xFF00) >> 8;
+            r->tx_base.aParm[9] = st_result.u16Rsv2 & 0xFF;
+            r->tx_base.aParm[10] = (st_result.u16Rsv3 & 0xFF00) >> 8;
+            r->tx_base.aParm[11] = st_result.u16Rsv3 & 0xFF;
+            r->tx_base.aParm[12] = (st_result.u16Rsv4 & 0xFF00) >> 8;
+            r->tx_base.aParm[13] = st_result.u16Rsv4 & 0xFF;
+            r->tx_base.aParm[14] = (st_result.u16Rsv5 & 0xFF00) >> 8;
+            r->tx_base.aParm[15] = st_result.u16Rsv5 & 0xFF;
+            break;
+        }
+        default:
+            DEBUG("no response perform_command");
+            break;
     }
-    mkdir(dirPath, S_IRWXU | S_IRWXG | S_IRWXO);
-    DEBUG("DIR:%s", dirPath);
-
-    //printf("Generating bmp files...\n");
-    // generate bmp files
-    for (i = 0; i < reg ; ++i) {
-        putchar('.');
-        fflush(stdout);
-        sprintf(outfile, "/mnt/bmp%d/file%d.bmp", dirCnt, i);
-#if 0
-        rgb24tobmp((unsigned long)(((unsigned long *)0x18000000) + width*height*i), outfile, width, height, 24);
-#else
-        rgb24tobmp(FRAME2ADDR(0x18000000,width,height,i), outfile, width, height, 24);
-#endif
-    }
-
-    dirCnt = (dirCnt + 1) % MAX_DIR_CNT;
-
-    sync();
-
-    puts("");
-
-    //sprintf(tmpCmd, "calSperm %s", dirPath);
-    //system(tmpCmd);
-#else
-    // Debug
-    sprintf(outfile, "/mnt/file.bmp");
-    if (!access(outfile, F_OK)) {
-        sprintf(tmpCmd, "rm -rf %s", outfile);
-        system(tmpCmd);
-        sync();
-    }
-    rgb24tobmp(FRAME2ADDR(0x18000000, width, height, 0), outfile, width, height, 24);
-    printf("Generating bmp files...\n");
-
-    calSperm(0x18000000, width, height, reg, &st_result);
-#endif
-    DEBUG("end");
-
-#if 0
-    memcpy(&r->tx_base, &r->rx_base, r->rx_base.ucLen + 1);
-#else
-    r->tx_base.ucLen = 0x14;
-    r->tx_base.aId[0] = 0x00;
-    r->tx_base.aId[1] = 0x01;
-    r->tx_base.cCmd = CMD_RESULT;
-    r->tx_base.aParm[0] = (st_result.u16sn & 0xFF00) >> 8;
-    r->tx_base.aParm[1] = st_result.u16sn & 0xFF;
-    r->tx_base.aParm[2] = (st_result.u16count & 0xFF00) >> 8;
-    r->tx_base.aParm[3] = st_result.u16count & 0xFF;
-    r->tx_base.aParm[4] = (st_result.u16motility & 0xFF00) >> 8;
-    r->tx_base.aParm[5] = st_result.u16motility & 0xFF;
-    r->tx_base.aParm[6] = (st_result.u16Rsv1 & 0xFF00) >> 8;
-    r->tx_base.aParm[7] = st_result.u16Rsv1 & 0xFF;
-    r->tx_base.aParm[8] = (st_result.u16Rsv2 & 0xFF00) >> 8;
-    r->tx_base.aParm[9] = st_result.u16Rsv2 & 0xFF;
-    r->tx_base.aParm[10] = (st_result.u16Rsv3 & 0xFF00) >> 8;
-    r->tx_base.aParm[11] = st_result.u16Rsv3 & 0xFF;
-    r->tx_base.aParm[12] = (st_result.u16Rsv4 & 0xFF00) >> 8;
-    r->tx_base.aParm[13] = st_result.u16Rsv4 & 0xFF;
-    r->tx_base.aParm[14] = (st_result.u16Rsv5 & 0xFF00) >> 8;
-    r->tx_base.aParm[15] = st_result.u16Rsv5 & 0xFF;
-
-#endif
 
     r->write_cb(r);
 }
