@@ -109,7 +109,7 @@ static void receiver_perform(receiver_st* r)
     DEBUG("0x43C00018 reg:%u", reg);
 
     switch ( (uint8_t)r->rx_base.aParm[0] ) {
-        case PERF_MEASURE: {
+        case PERF_SAMPLE: {
             // create directory
             sprintf(dirPath, "/mnt/bmp_sample");
             if (!access(dirPath, F_OK)) {
@@ -133,7 +133,7 @@ static void receiver_perform(receiver_st* r)
             memcpy(&r->tx_base, &r->rx_base, r->rx_base.ucLen + 1);
 
             break;
-        } case PERF_SAMPLE: {
+        } case PERF_MEASURE: {
             // Debug
             sprintf(outfile, "/mnt/file.bmp");
             if (!access(outfile, F_OK)) {

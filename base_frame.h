@@ -40,9 +40,8 @@ enum stCommandSet {
 
 /* Frame - perform format */
 enum stPerfFormat {
-    PERF_MEASURE = 0,
-    PERF_SAMPLE,
-    PERF_MAX_SIZE,
+    PERF_MEASURE = 0x1,
+    PERF_SAMPLE = 0x2,
 };
 
 /* Frame - parameter format */
