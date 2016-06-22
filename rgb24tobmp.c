@@ -15,9 +15,9 @@
 
 #include "debug.h"
 
-#include "bmpfile.h"
+#include "bmp_util.h"
 
-#include "devmem.h"
+#include "devmem_util.h"
 
 #include "rgb24tobmp.h"
 

@@ -9,8 +9,8 @@
  * Created in 2016-03-07 by Clive;
  */
 
-#ifndef _UART_H_
-#define _UART_H_
+#ifndef _UART_UTIL_H_
+#define _UART_UTIL_H_
 
 #ifdef __cplusplus
 extern C {
@@ -43,5 +43,5 @@ void uart_destroy(uart_st * u);
 }
 #endif
 
-#endif /* end of _UART_H_ */
+#endif /* end of _UART_UTIL_H_ */
 

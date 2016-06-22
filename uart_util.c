@@ -20,7 +20,7 @@
 
 #include "debug.h"
 
-#include "uart.h"
+#include "uart_util.h"
 
 /*
  * define the debug level of this file,

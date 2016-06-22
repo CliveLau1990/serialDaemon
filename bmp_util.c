@@ -24,7 +24,7 @@
 
 #include "debug.h"
 
-#include "bmpfile.h"
+#include "bmp_util.h"
 
 /*
  * define the debug level of this file,
@@ -146,8 +146,8 @@ bmp_create_standard_color_table(bmpfile_t *bmp)
     bmp->colors[i].red = 166;
     bmp->colors[i].green = 202;
     bmp->colors[i].blue = 240;
-   
-    // overwrite colors 246 to 255 
+
+    // overwrite colors 246 to 255
     i = 246;
     bmp->colors[i].red = 255;
     bmp->colors[i].green = 251;

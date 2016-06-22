@@ -27,7 +27,7 @@
 
 #include "debug.h"
 
-#include "uart.h"
+#include "uart_util.h"
 
 #include "receiver.h"
 

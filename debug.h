@@ -12,13 +12,13 @@
 #ifndef _DEBUG_H_
 #define _DEBUG_H_
 
-/* 
+/*
  * debug control, you can switch on (delete 'x' suffix)
  * to enable log output and assert mechanism
  */
 #define CONFIG_ENABLE_DEBUG
 
-/* 
+/*
  * debug level,
  * if is DEBUG_LEVEL_DISABLE, no log is allowed output,
  * if is DEBUG_LEVEL_ERR, only ERR is allowed output,
@@ -40,8 +40,8 @@ enum debug_level {
 
 #define TAG "serialDaemon: "
 
-/* 
- * the macro to set debug level, you should call it 
+/*
+ * the macro to set debug level, you should call it
  * once in the files you need use debug system
  */
 #define DEBUG_SET_LEVEL(x)  static int debug = x
@@ -76,7 +76,7 @@ do {                                                    \
 
 #else   /* CONFIG_ENABLE_DEBUG  */
 
-#define DEBUG_SET_LEVEL(x) 
+#define DEBUG_SET_LEVEL(x)
 #define ASSERT()
 #define ERR(...)
 #define INFO(...)

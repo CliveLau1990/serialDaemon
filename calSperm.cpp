@@ -1,7 +1,7 @@
 #include "CalSpermCount.h"
 #include "Histogram.h"
 
-#include "devmem.h"
+#include "devmem_util.h"
 
 #include "calSperm.h"
 

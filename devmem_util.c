@@ -24,10 +24,10 @@
 #include <termios.h>
 #include <sys/types.h>
 #include <sys/mman.h>
-  
+
 #include "debug.h"
 
-#include "devmem.h"
+#include "devmem_util.h"
 
 /*
  * define the debug level of this file,
@@ -35,12 +35,12 @@
  */
 DEBUG_SET_LEVEL(DEBUG_LEVEL_ERR);
 
-static int		devmem_fd;
+static int    devmem_fd;
 
 void *devm_map(unsigned long addr, unsigned long len)
 {
 	off_t offset;
-	void *map_base; 
+	void *map_base;
 
 	if ((devmem_fd = open("/dev/mem", O_RDWR | O_SYNC)) == -1) {
 		ERR("cannot open '/dev/mem'\n");
@@ -105,7 +105,7 @@ uint8_t devmem_readb(unsigned long addr)
 	}
 
 	val = *(uint8_t *)virt_addr;
-	
+
 	devm_unmap(virt_addr, 1);
 
 	return val;
@@ -123,7 +123,7 @@ void devmem_writeb(unsigned long addr, uint8_t val)
 	}
 
 	*(uint8_t *)virt_addr = val;
-	
+
 	devm_unmap(virt_addr, 1);
 }
 
@@ -141,7 +141,7 @@ uint16_t devmem_readw(unsigned long addr)
 	}
 
 	val = *(uint16_t *)virt_addr;
-	
+
 	devm_unmap(virt_addr, 2);
 
 	return val;
@@ -159,7 +159,7 @@ void devmem_writew(unsigned long addr, uint16_t val)
 	}
 
 	*(uint16_t *)virt_addr = val;
-	
+
 	devm_unmap(virt_addr, 2);
 }
 
@@ -177,7 +177,7 @@ uint32_t devmem_readl(unsigned long addr)
 	}
 
 	val = *(uint32_t *)virt_addr;
-	
+
 	devm_unmap(virt_addr, 4);
 
 	return val;
@@ -195,7 +195,7 @@ void devmem_writel(unsigned long addr, uint32_t val)
 	}
 
 	*(uint32_t *)virt_addr = val;
-	
+
 	devm_unmap(virt_addr, 4);
 }
 
@@ -213,7 +213,7 @@ uint64_t devmem_readq(unsigned long addr)
 	}
 
 	val = *(uint64_t *)virt_addr;
-	
+
 	devm_unmap(virt_addr, 8);
 
 	return val;
@@ -231,7 +231,7 @@ void devmem_writeq(unsigned long addr, uint64_t val)
 	}
 
 	*(uint64_t *)virt_addr = val;
-	
+
 	devm_unmap(virt_addr, 8);
 }
 
@@ -252,9 +252,9 @@ void devmem_readsb(unsigned long addr, void *buf, unsigned long count)
 		src = virt_addr;
 		dst = buf;
 		do {
-                        *dst++ = *src++;
-                } while (--count);
-        }
+            *dst++ = *src++;
+        } while (--count);
+    }
 
 	devm_unmap(virt_addr, len);
 }
@@ -275,9 +275,9 @@ void devmem_writesb(unsigned long addr, void *buf, unsigned long count)
 		dst = virt_addr;
 		src = buf;
 		do {
-                        *dst++ = *src++;
-                } while (--count);
-        }
+            *dst++ = *src++;
+        } while (--count);
+    }
 
 	devm_unmap(virt_addr, len);
 }
@@ -299,9 +299,9 @@ void devmem_readsw(unsigned long addr, void *buf, unsigned long count)
 		src = virt_addr;
 		dst = buf;
 		do {
-                        *dst++ = *src++;
-                } while (--count);
-        }
+            *dst++ = *src++;
+        } while (--count);
+    }
 
 	devm_unmap(virt_addr, len);
 }
@@ -322,9 +322,9 @@ void devmem_writesw(unsigned long addr, void *buf, unsigned long count)
 		dst = virt_addr;
 		src = buf;
 		do {
-                        *dst++ = *src++;
-                } while (--count);
-        }
+            *dst++ = *src++;
+        } while (--count);
+    }
 
 	devm_unmap(virt_addr, len);
 }
@@ -346,9 +346,9 @@ void devmem_readsl(unsigned long addr, void *buf, unsigned long count)
 		src = virt_addr;
 		dst = buf;
 		do {
-                        *dst++ = *src++;
-                } while (--count);
-        }
+            *dst++ = *src++;
+        } while (--count);
+    }
 
 	devm_unmap(virt_addr, len);
 }
@@ -369,9 +369,9 @@ void devmem_writesl(unsigned long addr, void *buf, unsigned long count)
 		dst = virt_addr;
 		src = buf;
 		do {
-                        *dst++ = *src++;
-                } while (--count);
-        }
+            *dst++ = *src++;
+        } while (--count);
+    }
 
 	devm_unmap(virt_addr, len);
 }
@@ -393,9 +393,9 @@ void devmem_readsq(unsigned long addr, void *buf, unsigned long count)
 		src = virt_addr;
 		dst = buf;
 		do {
-                        *dst++ = *src++;
-                } while (--count);
-        }
+            *dst++ = *src++;
+        } while (--count);
+    }
 
 	devm_unmap(virt_addr, len);
 }
@@ -416,9 +416,9 @@ void devmem_writesq(unsigned long addr, void *buf, unsigned long count)
 		dst = virt_addr;
 		src = buf;
 		do {
-                        *dst++ = *src++;
-                } while (--count);
-        }
+            *dst++ = *src++;
+        } while (--count);
+    }
 
 	devm_unmap(virt_addr, len);
 }

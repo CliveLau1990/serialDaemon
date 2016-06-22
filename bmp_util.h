@@ -9,18 +9,12 @@
  * Created in 2016-03-07 by Clive;
  */
 
-#ifndef __bmpfile_h__
-#define __bmpfile_h__
+#ifndef __BMP_UTIL_h__
+#define __BMP_UTIL_h__
 
 #ifdef __cplusplus
-#define BMP_BEGIN_DECLS extern "C" {
-#define BMP_END_DECLS }
-#else
-#define BMP_BEGIN_DECLS
-#define BMP_END_DECLS
+extern "C" {
 #endif
-
-BMP_BEGIN_DECLS
 
 #ifndef bool
 typedef int bool;
@@ -121,6 +115,8 @@ bool bmp_set_pixel(bmpfile_t *bmp, uint32_t x, uint32_t y, rgb_pixel_t pixel);
 
 bool bmp_save(bmpfile_t *bmp, const char *filename);
 
-BMP_END_DECLS
+#ifdef __cplusplus
+}
+#endif
 
-#endif /* __bmpfile_h__ */
+#endif /* __BMP_UTIL_h__ */

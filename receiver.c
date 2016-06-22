@@ -148,7 +148,7 @@ static void receiver_perform(receiver_st* r)
 
             r->tx_base.ucLen = 0x14;
             r->tx_base.aId[0] = 0x00;
-            r->tx_base.aId[1] = 0x01;
+            r->tx_base.aId[1] = 0x10;
             r->tx_base.cCmd = CMD_RESULT;
             r->tx_base.aParm[0] = (st_result.u16sn & 0xFF00) >> 8;
             r->tx_base.aParm[1] = st_result.u16sn & 0xFF;

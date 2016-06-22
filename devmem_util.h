@@ -9,8 +9,8 @@
  * Created in 2016-03-07 by Clive;
  */
 
-#ifndef _DEVMEM_H_
-#define _DEVMEM_H_
+#ifndef _DEVMEM_UTIL_H_
+#define _DEVMEM_UTIL_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,4 +52,4 @@ void devmem_set32(unsigned long addr, uint32_t value, unsigned long count);
 }
 #endif
 
-#endif /* end of _DEVMEM_H_ */
+#endif /* end of _DEVMEM_UTIL_H_ */
