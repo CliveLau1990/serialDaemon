@@ -27,8 +27,13 @@
 
 #include "debug.h"
 
+#include "config.h"
+
+#include "serialDaemon.h"
+
 #include "uart_util.h"
 
+#include "ov5640.h"
 #include "receiver.h"
 
 /*
@@ -37,16 +42,19 @@
  */
 DEBUG_SET_LEVEL(DEBUG_LEVEL_DEBUG);
 
+#if 0
 typedef struct _serialDaemon {
     pthread_t       rx_thread;
+    ov5640_t *      ov5640;
     uart_st *       uart;
     receiver_st *   receiver;
-} serialDaemon_st;
-static serialDaemon_st stSerialDaemon;
+} serialDaemon_t;
+#endif
+serialDaemon_t stSerialDaemon;
 
 static void msg_rx_thread(void * arg)
 {
-	serialDaemon_st * service = (serialDaemon_st *)arg;
+	serialDaemon_t * service = (serialDaemon_t *)arg;
 	uart_st *uart = service->uart;
 	receiver_st  *receiver = service->receiver;
 
@@ -97,7 +105,13 @@ int main (int argc, char * argv[])
 */
     //daemon(0, 0);
 
-    stSerialDaemon.uart = uart_instance("/dev/ttyPS0");
+    stSerialDaemon.ov5640 = ov5640_instance();
+    if (NULL == stSerialDaemon.ov5640) {
+        ERR("ov5640: fail to apply for instance");
+        return -1;
+    }
+
+    stSerialDaemon.uart = uart_instance(UART_DEV);
     if (NULL == stSerialDaemon.uart) {
         ERR("uart: fail to apply for instance");
         return -1;

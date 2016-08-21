@@ -32,65 +32,56 @@
  */
 DEBUG_SET_LEVEL(DEBUG_LEVEL_INFO);
 
-static int i2c_open(i2c_st * thiz);
-static int i2c_close(i2c_st * thiz);
-static void i2c_init(i2c_st * thiz, char * dev);
-static int i2c_read(i2c_st * thiz, unsigned reg_addr, unsigned char * buf, size_t len);
-static int i2c_write(i2c_st * thiz, unsigned reg_addr, unsigned char * buf, size_t len);
+#define I2C_RW_RETRIES 1
 
-static int i2c_dev_fd = -1;
-static i2c_st * pObj = NULL;
+static int i2c_open(i2c_t * thiz);
+static int i2c_close(i2c_t * thiz, int dev_fd);
+static void i2c_init(i2c_t * thiz, int8_t * dev, uint8_t slave_addr);
+static int32_t i2c_read(i2c_t * thiz, uint16_t reg_addr, uint8_t * buf, size_t len);
+static int32_t i2c_write(i2c_t * thiz, uint16_t reg_addr, uint8_t * val, size_t len);
 
-static int i2c_open(i2c_st * thiz)
+static int i2c_open(i2c_t * thiz)
 {
     DEBUG("called");
 
-    if (-1 != i2c_dev_fd) {
-        goto out;
-    }
+    int32_t dev_fd = -1;
 
-    do {
-        i2c_dev_fd = open(thiz->dev, O_RDWR | O_NOCTTY | O_NONBLOCK);
-    } while (i2c_dev_fd < 0 && errno == EINTR);
-
-    if (i2c_dev_fd < 0) {
-        ERR("could not open i2c device");
+    dev_fd = open(thiz->dev, O_RDWR | O_NONBLOCK);
+    if (dev_fd < 0) {
+        ERR("Could not open i2c device");
         return -1;
     }
 
-    INFO("Read from %s, fd: %d", thiz->dev, i2c_dev_fd);
+    //INFO("Read from %s, fd: %d", thiz->dev, dev_fd);
 
-out:
-    return i2c_dev_fd;
+    ioctl(dev_fd, I2C_SLAVE_FORCE, thiz->slave_addr);
+    ioctl(dev_fd, I2C_TIMEOUT, 2);
+    ioctl(dev_fd, I2C_RETRIES, 1);
+
+    return dev_fd;
 }
 
-static int i2c_close(i2c_st * thiz)
+static int i2c_close(i2c_t * thiz, int32_t dev_fd)
 {
     DEBUG("called");
 
-    if (-1 != i2c_dev_fd) {
-        close(i2c_dev_fd);
-        i2c_dev_fd = -1;
+    if (-1 != dev_fd) {
+        close(dev_fd);
     }
 
     return 0;
 }
 
-static int i2c_get_fd(i2c_st * thiz)
-{
-    DEBUG("called");
-
-    return i2c_dev_fd;
-}
-
-static int i2c_read(i2c_st * thiz, unsigned int reg_addr, unsigned char * buf, size_t len)
+static int32_t i2c_read(i2c_t * thiz, uint16_t reg_addr, uint8_t * buf, size_t len)
 {
     struct i2c_rdwr_ioctl_data args;
-    unsigned char reg_buf[2];
-    int ret;
+    uint8_t reg_buf[2];
+    int32_t dev_fd;
+    int32_t retval, retries;
 
-    if (i2c_dev_fd < 0) {
-        ERR("Invalid i2c_dev_fd:%d", i2c_dev_fd);
+    dev_fd = i2c_open(thiz);
+    if (dev_fd < 0) {
+        ERR("Invalid dev_fd:%d", dev_fd);
         return -ENODEV;
     }
 
@@ -104,9 +95,6 @@ static int i2c_read(i2c_st * thiz, unsigned int reg_addr, unsigned char * buf, s
         return -ENOMEM;
     }
 
-    ioctl(i2c_dev_fd, I2C_TIMEOUT, 2);
-    ioctl(i2c_dev_fd, I2C_RETRIES, 1);
-
     (args.msgs[0]).len = 2;
     (args.msgs[0]).addr = thiz->slave_addr;
     (args.msgs[0]).buf = reg_buf;
@@ -116,27 +104,33 @@ static int i2c_read(i2c_st * thiz, unsigned int reg_addr, unsigned char * buf, s
     (args.msgs[1]).addr = thiz->slave_addr;
     (args.msgs[1]).buf = buf;
 
-    ret = ioctl(i2c_dev_fd, I2C_RDWR, (unsigned long)&args);
-    if (ret < 0) {
-        ERR("During I2C_RDWR ioctl with error code: %d", ret);
-        len = 0;
-    } else {
-        INFO("read salve:%02x reg:%04x\n", thiz->slave_addr, reg_addr);
+    for (retries = I2C_RW_RETRIES; retries != 0; --retries) {
+        retval = ioctl(dev_fd, I2C_RDWR, (unsigned long)&args);
+        if (retval < 0) {
+            ERR("During I2C_RDWR ioctl with error code: %d, slave:%02x, reg:%04x, retries:%d",
+                retval, thiz->slave_addr, reg_addr, retries);
+            continue;
+        }
+        break;
     }
 
     free(args.msgs);
 
-    return len;
+    i2c_close(thiz, dev_fd);
+
+    return retval;
 }
 
-static int i2c_write(i2c_st * thiz, unsigned int reg_addr, unsigned char * val, size_t len)
+static int32_t i2c_write(i2c_t * thiz, uint16_t reg_addr, uint8_t * val, size_t len)
 {
     struct i2c_rdwr_ioctl_data args;
-    unsigned char buf[len + 2];
-    int ret;
+    uint8_t buf[len + 2];
+    int32_t dev_fd;
+    int32_t retval, retries;
 
-    if (i2c_dev_fd < 0) {
-        ERR("Invalid i2c_dev_fd:%d", i2c_dev_fd);
+    dev_fd = i2c_open(thiz);
+    if (dev_fd < 0) {
+        ERR("Invalid dev_fd:%d", dev_fd);
         return -ENODEV;
     }
 
@@ -150,30 +144,30 @@ static int i2c_write(i2c_st * thiz, unsigned int reg_addr, unsigned char * val, 
         return -ENOMEM;
     }
 
-    ioctl(i2c_dev_fd, I2C_TIMEOUT, 2);
-    ioctl(i2c_dev_fd, I2C_RETRIES, 1);
-
     (args.msgs[0]).len = len + 2;
     (args.msgs[0]).addr = thiz->slave_addr;
     (args.msgs[0]).buf = buf;
 
     memcpy(buf + 2, val, len);
 
-    ret = ioctl(i2c_dev_fd, I2C_RDWR, (unsigned long)&args);
-    if (ret < 0) {
-        ERR("During I2C_RDWR ioctl with error code: %d", ret);
-        len = 0;
-    } else {
-        INFO("write salve:%02x reg:%02x\n", thiz->slave_addr, reg_addr);
-        return len;
+    for (retries = I2C_RW_RETRIES; retries != 0; --retries) {
+        retval = ioctl(dev_fd, I2C_RDWR, (unsigned long)&args);
+        if (retval < 0) {
+            ERR("During I2C_RDWR ioctl with error code: %d, slave:%02x, reg:%04x, retries:%d",
+                retval, thiz->slave_addr, reg_addr, retries);
+            continue;
+        }
+        break;
     }
 
     free(args.msgs);
 
-    return len;
+    i2c_close(thiz, dev_fd);
+
+    return retval;
 }
 
-static void i2c_init(i2c_st * thiz, char * dev)
+static void i2c_init(i2c_t * thiz, int8_t * dev, uint8_t slave_addr)
 {
     DEBUG("called");
 
@@ -183,48 +177,40 @@ static void i2c_init(i2c_st * thiz, char * dev)
         ERR("Invalid device name");
     }
     memcpy(thiz->dev, dev, strlen(dev));
-
-    i2c_dev_fd = -1;
-
-    thiz->get_fd_cb = i2c_get_fd;
+    thiz->slave_addr = slave_addr;
+    thiz->open_cb = i2c_open;
+    thiz->close_cb = i2c_close;
     thiz->read_cb = i2c_read;
     thiz->write_cb = i2c_write;
 }
 
-i2c_st * i2c_instance(char * dev)
+i2c_t * i2c_instance(int8_t * dev, uint8_t slave_addr)
 {
     DEBUG("called");
 
-    if (pObj){
-        INFO("Object already instance");
-        return pObj;
-    }
+    i2c_t * thiz = NULL;
 
-    pObj = (i2c_st *)malloc(sizeof(*pObj));
-    if (NULL == pObj) {
+    thiz = (i2c_t *)malloc(sizeof(*thiz));
+    if (NULL == thiz) {
         ERR("Fail to alloc memory");
         return NULL;
     }
 
-    i2c_init(pObj, dev);
+    i2c_init(thiz, dev, slave_addr);
 
-    i2c_open(pObj);
-
-    return pObj;
+    return thiz;
 }
 
-void i2c_destroy(i2c_st * thiz)
+void i2c_destroy(i2c_t ** thiz)
 {
     DEBUG("called");
 
-    if (NULL == pObj) {
+    if (NULL == *thiz) {
         INFO("Object already destroy");
         return;
     }
 
-    i2c_close(thiz);
-
-    free(pObj);
-    pObj = NULL;
+    free(*thiz);
+    *thiz = NULL;
 }
 

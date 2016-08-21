@@ -20,8 +20,15 @@
 
 #include "debug.h"
 
+
+#include "config.h"
 #include "common.h"
 #include "reg.h"
+
+#include "i2c_util.h"
+
+#include "serialDaemon.h"
+
 #include "rgb24tobmp.h"
 #include "calSperm.h"
 #include "receiver.h"
@@ -37,6 +44,8 @@
 DEBUG_SET_LEVEL(DEBUG_LEVEL_DEBUG);
 
 typedef void (*receiver_cmd_callback)(receiver_st * r);
+
+extern serialDaemon_t stSerialDaemon;
 
 static receiver_st * pReceiver = NULL;
 static bool isConnected = false;
@@ -80,10 +89,12 @@ static void receiver_perform(receiver_st* r)
     DEBUG("called");
 
     char dirPath[255], outfile[255], tmpCmd[255];
+    uint8_t val;
     uint32_t reg;
     unsigned long addr;
     uint32_t width, height;
     uint32_t i;
+    int retries;;
 
     // reset DMA controller
     devmem_set32(REG_ADDR_CTRL, 0x1, 1);
@@ -95,7 +106,9 @@ static void receiver_perform(receiver_st* r)
 
     devmem_readsl(REG_ADDR_TMR, (void *)&reg, 1);
     DEBUG("0x43C00008 reg:%u", reg);
-    usleep((reg+200) * 1000);
+    usleep((reg+300) * 1000);
+
+    stSerialDaemon.ov5640->release_vcm_cb(stSerialDaemon.ov5640);
 
     devmem_readsl(REG_ADDR_X, (void *)&reg, 1);
     width = reg & 0x0000FFFF;
@@ -132,7 +145,14 @@ static void receiver_perform(receiver_st* r)
 
             memcpy(&r->tx_base, &r->rx_base, r->rx_base.ucLen + 1);
 
+#if 0
+            retries = 5;
+            do {
+                val = 0x8;
+                pI2c->write_cb(pI2c, 0x3022, &val, 1);
+            } while(--retries);
             break;
+#endif
         } case PERF_MEASURE: {
             // Debug
             sprintf(outfile, "/mnt/file.bmp");
@@ -166,6 +186,29 @@ static void receiver_perform(receiver_st* r)
             r->tx_base.aParm[13] = st_result.u16Rsv4 & 0xFF;
             r->tx_base.aParm[14] = (st_result.u16Rsv5 & 0xFF00) >> 8;
             r->tx_base.aParm[15] = st_result.u16Rsv5 & 0xFF;
+            break;
+        } case PERF_AF: {
+            stSerialDaemon.ov5640->af_ctrl_cb(stSerialDaemon.ov5640);
+
+            memcpy(&r->tx_base, &r->rx_base, r->rx_base.ucLen + 1);
+#if 0
+            retries = 5;
+            do {
+                val = 0x3;
+                pI2c->write_cb(pI2c, 0x3022, &val, 1);
+            } while(--retries);
+            while (0x10 != val) {
+                pI2c->read_cb(pI2c, 0x3029, &val, 1);
+                usleep(5000);
+            }
+            INFO("AF Completely.");
+            sleep(3); // 延时3s(CMOS对焦过程)
+            retries = 5;
+            do {
+                val = 0x6;
+                pI2c->write_cb(pI2c, 0x3022, &val, 1);
+            } while(--retries);
+#endif
             break;
         }
         default:

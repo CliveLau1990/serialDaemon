@@ -20,28 +20,30 @@ extern C {
 
 #define NAME_MAX_SIZE 32
 
-typedef struct _i2c i2c_st;
+typedef struct _i2c i2c_t;
 
-/* Callback for get i2c device fd */
-typedef int (* i2c_get_fd_callback)(i2c_st * thiz);
+/* Callback for open i2c device. */
+typedef int32_t (* i2c_open_callback)(i2c_t * thiz);
+/* Callback for close i2c device. */
+typedef int32_t (* i2c_close_callback)(i2c_t * thiz, int32_t dev_fd);
 /* Callback for read i2c device. */
-typedef int (* i2c_read_callback)(i2c_st * thiz, unsigned reg_addr, unsigned char * buf, size_t len);
+typedef int32_t (* i2c_read_callback)(i2c_t * thiz, uint16_t reg_addr, uint8_t * buf, size_t len);
 /* Callback for write i2c device. */
-typedef int (* i2c_write_callback)(i2c_st * thiz, unsigned reg_addr, unsigned char * buf, size_t len);
+typedef int32_t (* i2c_write_callback)(i2c_t * thiz, uint16_t reg_addr, uint8_t * buf, size_t len);
 
 struct _i2c {
-    char    dev[NAME_MAX_SIZE];
-    int     fd;
-    unsigned int slave_addr;
+    int8_t      dev[NAME_MAX_SIZE];
+    uint8_t     slave_addr;
 
     /* Interfaces */
-    i2c_get_fd_callback    get_fd_cb;
+    i2c_open_callback      open_cb;
+    i2c_close_callback     close_cb;
     i2c_read_callback      read_cb;
     i2c_write_callback     write_cb;
 };
 
-i2c_st * i2c_instance(char * dev);
-void i2c_destroy(i2c_st * thiz);
+i2c_t * i2c_instance(int8_t * dev, uint8_t slave_addr);
+void i2c_destroy(i2c_t ** thiz);
 
 #ifdef __cplusplus
 }
